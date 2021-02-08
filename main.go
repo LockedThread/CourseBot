@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/diamondburned/arikawa/v2/discord"
 	"github.com/diamondburned/arikawa/v2/gateway"
 	"github.com/diamondburned/arikawa/v2/session"
 	"log"
@@ -24,6 +25,30 @@ func main() {
 	}
 	BotSession = *s
 
+	SetupHandlers()
+
+	// Add the needed Gateway intents.
+	BotSession.Gateway.AddIntents(gateway.IntentGuildMessages)
+	BotSession.Gateway.AddIntents(gateway.IntentDirectMessages)
+	BotSession.Gateway.AddIntents(gateway.IntentGuildMessageReactions)
+
+	if err := BotSession.Open(); err != nil {
+		log.Fatalln("Failed to connect:", err)
+	}
+	defer BotSession.Close()
+
+	u, err := BotSession.Me()
+	if err != nil {
+		log.Fatalln("Failed to get myself:", err)
+	}
+
+	log.Println("Started as", u.Username)
+
+	// Block forever.
+	select {}
+}
+
+func SetupHandlers() {
 	BotSession.AddHandler(func(event *gateway.MessageCreateEvent) {
 		if len(event.Content) > 0 {
 			prefix := event.Content[0]
@@ -67,24 +92,28 @@ func main() {
 		}
 	})
 
-	// Add the needed Gateway intents.
-	BotSession.Gateway.AddIntents(gateway.IntentGuildMessages)
-	BotSession.Gateway.AddIntents(gateway.IntentDirectMessages)
+	BotSession.AddHandler(func(event *gateway.GuildMemberAddEvent) {
+		roles, err := BotSession.Roles(event.GuildID)
+		HandleErr(err)
+		var role discord.Role
+		for _, role = range roles {
+			if role.Name == "Unverified" {
+				break
+			}
+		}
+		err = BotSession.AddRole(event.GuildID, event.User.ID, role.ID)
+		HandleErr(err)
+	})
 
-	if err := BotSession.Open(); err != nil {
-		log.Fatalln("Failed to connect:", err)
-	}
-	defer BotSession.Close()
-
-	u, err := BotSession.Me()
-	if err != nil {
-		log.Fatalln("Failed to get myself:", err)
-	}
-
-	log.Println("Started as", u.Username)
-
-	// Block forever.
-	select {}
+	BotSession.AddHandler(func(event *gateway.MessageReactionAddEvent) {
+		channel, err := BotSession.Channel(event.ChannelID)
+		HandleErr(err)
+		if channel.Name == "welcome" {
+			log.Println("emoji=",
+				event.Emoji)
+			// TODO: Switch users role from unverified
+		}
+	})
 }
 
 func HandleErr(err error) {
