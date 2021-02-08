@@ -66,7 +66,7 @@ func CommandSetup(input *CommandInput) {
 			nil,
 		)
 		HandleErr(err)
-		err = BotSession.React(channel.ID, message.ID, ":white_check_mark:")
+		err = BotSession.React(channel.ID, message.ID, "✅")
 		HandleErr(err)
 	}
 }
