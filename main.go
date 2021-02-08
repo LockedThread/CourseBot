@@ -18,28 +18,38 @@ func main() {
 		log.Fatalln("No $BOT_TOKEN given.")
 	}
 
-	BotSession, err := session.New("Bot " + token)
+	s, err := session.New("Bot " + token)
 	if err != nil {
 		log.Fatalln("Session failed:", err)
 	}
+	BotSession = *s
 
 	BotSession.AddHandler(func(c *gateway.MessageCreateEvent) {
 		if len(c.Content) > 0 {
 			prefix := c.Content[0]
 			if prefix == '!' {
-				index := strings.Index(c.Content, " ")
-				command := c.Content[0:index]
+				var index int
+				if i := strings.Index(c.Content, " "); i == -1 {
+					index = len(c.Content)
+				}
+				log.Println("Index: ", index)
+				command := c.Content[1:index]
+				log.Println("Command: ", command)
 				if len(command) > 0 {
 					args := strings.Split(c.Content[index:len(c.Content)], " ")
-					var input = CommandInput{
+					var input = &CommandInput{
 						Command:   command,
 						Arguments: args,
 						Prefix:    prefix,
-						Event:     c,
+						Event:     *c,
 					}
+					log.Println("input=", input.String())
 					switch strings.ToLower(command) {
 					case "setup":
-						CommandSetup(input)
+						CommandSetup(*input)
+						break
+					case "get_permissions":
+						CommandGetPermissions(input)
 						break
 					default:
 						break
@@ -67,4 +77,10 @@ func main() {
 
 	// Block forever.
 	select {}
+}
+
+func HandleErr(err error) {
+	if err != nil {
+		log.Fatalln("We've encountered an error:", err)
+	}
 }
