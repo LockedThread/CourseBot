@@ -14,16 +14,15 @@ var (
 )
 
 func main() {
-	var token = os.Getenv("BOT_TOKEN")
-	if token == "" {
-		log.Fatalln("No $BOT_TOKEN given.")
+	if token := os.Getenv("BOT_TOKEN"); len(token) == 0 {
+		log.Fatalln("No BOT_TOKEN environmental variable given. Correct this in the docker env settings.")
+	} else {
+		s, err := session.New("Bot " + token)
+		if err != nil {
+			log.Fatalln("Session failed:", err)
+		}
+		BotSession = *s
 	}
-
-	s, err := session.New("Bot " + token)
-	if err != nil {
-		log.Fatalln("Session failed:", err)
-	}
-	BotSession = *s
 
 	SetupHandlers()
 
@@ -37,13 +36,7 @@ func main() {
 	}
 	defer BotSession.Close()
 
-	u, err := BotSession.Me()
-	if err != nil {
-		log.Fatalln("Failed to get myself:", err)
-	}
-
-	log.Println("Started as", u.Username)
-
+	log.Println("CourseBot started without issues")
 	// Block forever.
 	select {}
 }
@@ -59,9 +52,7 @@ func SetupHandlers() {
 				} else {
 					index = i + 1
 				}
-				log.Println("Index: ", index)
 				command := event.Content[1:index]
-				log.Println("Command: ", command)
 				if len(command) > 0 {
 					args := strings.Split(event.Content[index:len(event.Content)], " ")
 					var input = &CommandInput{
@@ -70,7 +61,6 @@ func SetupHandlers() {
 						Prefix:    prefix,
 						Event:     *event,
 					}
-					log.Println("input=", input.String())
 					switch strings.TrimSpace(strings.ToLower(command)) {
 					case "setup":
 						CommandSetup(input)
@@ -109,8 +99,6 @@ func SetupHandlers() {
 		channel, err := BotSession.Channel(event.ChannelID)
 		HandleErr(err)
 		if channel.Name == "welcome" {
-			log.Println("emoji=",
-				event.Emoji)
 			// TODO: Switch users role from unverified
 		}
 	})
