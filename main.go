@@ -31,6 +31,8 @@ func main() {
 				var index int
 				if i := strings.Index(c.Content, " "); i == -1 {
 					index = len(c.Content)
+				} else {
+					index = i + 1
 				}
 				log.Println("Index: ", index)
 				command := c.Content[1:index]
@@ -44,12 +46,18 @@ func main() {
 						Event:     *c,
 					}
 					log.Println("input=", input.String())
-					switch strings.ToLower(command) {
+					switch strings.TrimSpace(strings.ToLower(command)) {
 					case "setup":
-						CommandSetup(*input)
+						CommandSetup(input)
 						break
 					case "get_permissions":
 						CommandGetPermissions(input)
+						break
+					case "get_role_permissions":
+						CommandGetRolePermissions(input)
+						break
+					case "get_channel_permissions":
+						CommandGetChannelPermissions(input)
 						break
 					default:
 						break
