@@ -24,26 +24,26 @@ func main() {
 	}
 	BotSession = *s
 
-	BotSession.AddHandler(func(c *gateway.MessageCreateEvent) {
-		if len(c.Content) > 0 {
-			prefix := c.Content[0]
+	BotSession.AddHandler(func(event *gateway.MessageCreateEvent) {
+		if len(event.Content) > 0 {
+			prefix := event.Content[0]
 			if prefix == '!' {
 				var index int
-				if i := strings.Index(c.Content, " "); i == -1 {
-					index = len(c.Content)
+				if i := strings.Index(event.Content, " "); i == -1 {
+					index = len(event.Content)
 				} else {
 					index = i + 1
 				}
 				log.Println("Index: ", index)
-				command := c.Content[1:index]
+				command := event.Content[1:index]
 				log.Println("Command: ", command)
 				if len(command) > 0 {
-					args := strings.Split(c.Content[index:len(c.Content)], " ")
+					args := strings.Split(event.Content[index:len(event.Content)], " ")
 					var input = &CommandInput{
 						Command:   command,
 						Arguments: args,
 						Prefix:    prefix,
-						Event:     *c,
+						Event:     *event,
 					}
 					log.Println("input=", input.String())
 					switch strings.TrimSpace(strings.ToLower(command)) {
