@@ -15,7 +15,7 @@ type CommandInput struct {
 
 func (input CommandInput) String() string {
 	return fmt.Sprintf(
-		"Command=%s, Prefix=%d, Arguments=%s, Event=%v",
+		"Command=%s, Prefix=%d, Arguments=%v, Event=%v",
 		input.Command,
 		input.Prefix,
 		input.Arguments,
