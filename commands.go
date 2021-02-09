@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/diamondburned/arikawa/v2/api"
 	"github.com/diamondburned/arikawa/v2/discord"
 	"log"
 )
@@ -10,63 +9,74 @@ func CommandSetup(input *CommandInput) {
 	if input.Event.Author.ID.String() == "697631712485572648" {
 		guild, err := BotSession.Guild(input.Event.GuildID)
 		HandleErr(err)
-		// TODO: Write code for setup
-		role, err := BotSession.CreateRole(guild.ID, api.CreateRoleData{
-			Name:        "Unverified",
-			Permissions: 67174465,
-			Color:       16187136, // #f6ff00
-			Hoist:       true,
-			Mentionable: false,
-		})
-		HandleErr(err)
-		roleId := role.ID.String()
-		log.Println("roleId=", roleId) // TODO: Put this in database
 
+		// Wipe Channels Start
 		channels, err := BotSession.Channels(guild.ID)
 		HandleErr(err)
-		for i := range channels {
-			err := BotSession.DeleteChannel(channels[i].ID)
+		for _, channel := range channels {
+			err := BotSession.DeleteChannel(channel.ID)
 			HandleErr(err)
 		}
+		// Wipe Channels End
 
-		var permissions = []discord.Overwrite{
-			discord.Overwrite{ // The bot
+		// Wipe Roles Start
+		roles, err := BotSession.Roles(guild.ID)
+		HandleErr(err)
+		for _, role := range roles {
+			if role.Name != "CourseBot" && role.Name != "@everyone" && !role.Managed {
+				log.Println("role=", role.Name)
+				err := BotSession.DeleteRole(guild.ID, role.ID)
+				HandleErr(err)
+			}
+		}
+		// Wipe Roles End
+
+		CreateRole(
+			guild.ID,
+			"Unverified",
+			67174465,
+			16187136,
+			true, false,
+		) // Unverified Role
+
+		CreateRole(
+			guild.ID,
+			"Member",
+			103926337,
+			16764928,
+			true,
+			false,
+		) // Member Role
+
+		welcomeChannelId := CreateChannel(guild.ID, "welcome", 0, []discord.Overwrite{
+			{ // The bot
 				ID:    808400745597632562,
 				Allow: 1024,
 				Deny:  0,
 				Type:  discord.OverwriteMember,
 			},
-			discord.Overwrite{ // @everyone
+			{ // @everyone
 				ID:    808402678790225920,
 				Allow: 0,
 				Deny:  1024,
 				Type:  discord.OverwriteRole,
 			},
-			discord.Overwrite{ // Unverified role
+			{ // Unverified role
 				ID:    808400745597632562,
 				Allow: 1024,
 				Deny:  0,
 				Type:  discord.OverwriteRole,
-			},
-		}
-
-		channel, err := BotSession.CreateChannel(guild.ID, api.CreateChannelData{
-			Name:        "welcome",
-			Type:        0,
-			Topic:       "Confirm acceptance into the discord by reacting to the message.",
-			NSFW:        false,
-			Permissions: permissions,
-		})
-		HandleErr(err)
+			}},
+		) // Welcome Text Channel
 
 		message, err := BotSession.SendMessage(
-			channel.ID,
+			welcomeChannelId,
 			"Hello and welcome to the {course} discord server. If you're joining one of the course discords for the first time, welcome; if not, welcome back! First and foremost, this discord is in no way directly administered, ran, or affiliated with Valencia College or any other college. We expect everyone to follow common courtesy and respect all others in the discord. By reacting to this message with :white_check_mark: , you are stating you will follow this discord's rules."+
 				"\n\nIf you have any further questions feel free to message this bot.",
 			nil,
-		)
+		) // Welcome Message
 		HandleErr(err)
-		err = BotSession.React(channel.ID, message.ID, "✅")
+		err = BotSession.React(welcomeChannelId, message.ID, "✅") // Welcome Message Reaction
 		HandleErr(err)
 
 		AddGuildCache(guild.ID)
