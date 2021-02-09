@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/diamondburned/arikawa/v2/discord"
 	"log"
 )
@@ -65,8 +64,39 @@ func CommandSetup(input *CommandInput) {
 		)
 
 		mention := "<@697631712485572648>"
-		_, err = BotSession.SendMessage(infoChannelId,
-			fmt.Sprintf("**Purpose**\nThe purpose of this discord is an attempt to foster the same college culture we would have if we were on campus. Along with that, this discord gives students a better opportunity to create study groups and ask each other questions about assignments.\n\n**What we ask from you**\nWe ask that you do not upload any complete course material directly to this discord so we are not liable for your actions. We also ask that you try to spread the word about this discord and our other discords.\n\n**Want to open another discord?**\nWe're always looking to open new discords for other courses, if you want new one open then just message %s and he can create another one for the course.\n\n**Final Message**\nMy suggestion is that people in this server should plan out times of the week where people can study together; remember, your strength grows in numbers. If you have any questions feel free to message %s as he is the one that runs this discord.\n\n**Disclaimer**\nThis discord is in no way directly affiliated with any college and is solely ran by students for students.", mention, mention), nil)
+
+		_, err = BotSession.SendEmbed(infoChannelId, discord.Embed{
+			Title:     "Information",
+			Type:      discord.NormalEmbed,
+			Timestamp: discord.Timestamp{},
+			Color:     16764928,
+			Footer: &discord.EmbedFooter{
+				Text: "CourseBot coded by Warren#2962",
+			},
+			Fields: []discord.EmbedField{
+				{
+					Name:  "Purpose",
+					Value: "The purpose of this discord is an attempt to foster the same college culture we would have if we were on campus. Along with that, this discord gives students a better opportunity to create study groups and ask each other questions about assignments.",
+				},
+				{
+					Name:  "What we ask from you",
+					Value: "We ask that you do not upload any complete course material directly to this discord so we are not liable for your actions. We also ask that you try to spread the word about this discord and our other discords.",
+				},
+				{
+					Name:  "Want to open another discord?",
+					Value: "We're always looking to open new discords for other courses, if you want new one open then just message " + mention + " and he can create another one for the course.",
+				},
+				{
+					Name:  "Final Message",
+					Value: "My suggestion is that people in this server should plan out times of the week where people can study together; remember, your strength grows in numbers. If you have any questions feel free to message " + mention + " as he is the one that runs this discord.",
+				},
+				{
+					Name:  "Disclaimer",
+					Value: "This discord is in no way directly affiliated with any college and is solely ran by students for students.",
+				},
+			},
+		})
+
 		HandleErr(err)
 
 		welcomeChannelId := CreateChannel(guild.ID, "welcome", 0, []discord.Overwrite{
@@ -84,17 +114,21 @@ func CommandSetup(input *CommandInput) {
 			}}, nil,
 		) // Welcome Text Channel
 
-		message, err := BotSession.SendMessage(
-			welcomeChannelId,
-			fmt.Sprintf("Hello and welcome to the %s discord server. If you're joining one of the course discords for the first time, welcome; if not, welcome back! First and foremost, this discord is in no way directly administered, ran, or affiliated with Valencia College or any other college. We expect everyone to follow common courtesy and respect all others in the discord. By reacting to this message with :white_check_mark: , you are stating you will follow this discord's rules."+
-				"\n\nIf you have any further questions feel free to message <@697631712485572648>.", guild.Name),
-			nil,
-		) // Welcome Message
+		welcomeMessage, err := BotSession.SendEmbed(welcomeChannelId, discord.Embed{
+			Title:       "Information",
+			Description: "Hello and welcome to the " + guild.Name + " discord server. If you're joining one of the course discords for the first time, welcome; if not, welcome back! First and foremost, this discord is in no way directly administered, ran, or affiliated with Valencia College or any other college. We expect everyone to follow common courtesy and respect all others in the discord. By reacting to this message with :white_check_mark: , you are stating you will follow this discord's rules.If you have any further questions feel free to message " + mention + ".",
+			Type:        discord.NormalEmbed,
+			Timestamp:   discord.Timestamp{},
+			Color:       16764928,
+			Footer: &discord.EmbedFooter{
+				Text: "CourseBot coded by Warren#2962",
+			},
+		})
 
 		generalPermissions := []discord.Overwrite{{ // Member role
 			ID:    discord.Snowflake(memberRoleId),
 			Allow: 1024,
-			Deny:  2048,
+			Deny:  0,
 			Type:  discord.OverwriteRole,
 		}}
 
@@ -103,9 +137,15 @@ func CommandSetup(input *CommandInput) {
 		CreateChannel(guild.ID, "general", 0, generalPermissions, &categoryId)
 		CreateChannel(guild.ID, "homework-help", 0, generalPermissions, &categoryId)
 		CreateChannel(guild.ID, "off-topic", 0, generalPermissions, &categoryId)
+		CreateChannel(guild.ID, "General", 2, generalPermissions, &categoryId)
+
+		categoryId = CreateCategory(guild.ID, "Study Rooms", generalPermissions)
+		CreateChannel(guild.ID, "study-room-chat", 0, generalPermissions, &categoryId)
+		CreateChannel(guild.ID, "Study Room 1", 2, generalPermissions, &categoryId)
+		CreateChannel(guild.ID, "Study Room 2", 2, generalPermissions, &categoryId)
 
 		HandleErr(err)
-		err = BotSession.React(welcomeChannelId, message.ID, "✅") // Welcome Message Reaction
+		err = BotSession.React(welcomeChannelId, welcomeMessage.ID, "✅") // Welcome Message Reaction
 		HandleErr(err)
 
 		AddGuildCache(guild.ID)
