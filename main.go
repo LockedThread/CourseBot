@@ -133,11 +133,14 @@ func AddGuildCache(guildId discord.GuildID) {
 			memberId = role.ID
 		}
 	}
+	guild, err := BotSession.Guild(guildId)
+	HandleErr(err)
 	GuildCacheMap[guildId] = GuildCache{
 		GuildID:          guildId,
 		WelcomeChannelID: welcomeChannelId,
 		UnverifiedID:     unverifiedId,
 		MemberID:         memberId,
+		CourseName:       guild.Name,
 	}
 }
 

@@ -33,4 +33,5 @@ type GuildCache struct {
 	WelcomeChannelID discord.ChannelID
 	UnverifiedID     discord.RoleID
 	MemberID         discord.RoleID
+	CourseName       string
 }
