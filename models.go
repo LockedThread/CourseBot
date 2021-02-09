@@ -27,3 +27,10 @@ func (input CommandInput) sendMessage(message string) *discord.Message {
 	HandleErr(err)
 	return sendMessage
 }
+
+type GuildCache struct {
+	GuildID          discord.GuildID
+	WelcomeChannelID discord.ChannelID
+	UnverifiedID     discord.RoleID
+	MemberID         discord.RoleID
+}

@@ -10,7 +10,8 @@ import (
 )
 
 var (
-	BotSession session.Session
+	BotSession    session.Session
+	GuildCacheMap map[discord.GuildID]GuildCache
 )
 
 func main() {
@@ -24,6 +25,7 @@ func main() {
 		BotSession = *s
 	}
 
+	LoadGuildCache()
 	SetupHandlers()
 
 	// Add the needed Gateway intents.
@@ -83,15 +85,7 @@ func SetupHandlers() {
 	})
 
 	BotSession.AddHandler(func(event *gateway.GuildMemberAddEvent) {
-		roles, err := BotSession.Roles(event.GuildID)
-		HandleErr(err)
-		var role discord.Role
-		for _, role = range roles {
-			if role.Name == "Unverified" {
-				break
-			}
-		}
-		err = BotSession.AddRole(event.GuildID, event.User.ID, role.ID)
+		err := BotSession.AddRole(event.GuildID, event.User.ID, GuildCacheMap[event.GuildID].UnverifiedID)
 		HandleErr(err)
 	})
 
@@ -99,9 +93,49 @@ func SetupHandlers() {
 		channel, err := BotSession.Channel(event.ChannelID)
 		HandleErr(err)
 		if channel.Name == "welcome" {
-			// TODO: Switch users role from unverified
+			cache := GuildCacheMap[event.GuildID]
+			err := BotSession.RemoveRole(event.GuildID, event.UserID, cache.UnverifiedID)
+			HandleErr(err)
+			err = BotSession.AddRole(event.GuildID, event.UserID, cache.MemberID)
+			HandleErr(err)
 		}
 	})
+}
+
+func LoadGuildCache() {
+	guilds, err := BotSession.Guilds(0)
+	HandleErr(err)
+	for _, guild := range guilds {
+		AddGuildCache(guild.ID)
+	}
+}
+
+func AddGuildCache(guildId discord.GuildID) {
+	channels, err := BotSession.Channels(guildId)
+	HandleErr(err)
+	var welcomeChannelId discord.ChannelID
+	for _, channel := range channels {
+		if channel.Name == "welcome" {
+			welcomeChannelId = channel.ID
+			break
+		}
+	}
+	roles, err := BotSession.Roles(guildId)
+	HandleErr(err)
+	var unverifiedId, memberId discord.RoleID
+	for _, role := range roles {
+		if role.Name == "Unverified" {
+			unverifiedId = role.ID
+		} else if role.Name == "Member" {
+			memberId = role.ID
+		}
+	}
+	GuildCacheMap[guildId] = GuildCache{
+		GuildID:          guildId,
+		WelcomeChannelID: welcomeChannelId,
+		UnverifiedID:     unverifiedId,
+		MemberID:         memberId,
+	}
 }
 
 func HandleErr(err error) {
