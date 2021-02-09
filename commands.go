@@ -25,7 +25,6 @@ func CommandSetup(input *CommandInput) {
 		HandleErr(err)
 		for _, role := range roles {
 			if role.Name != "CourseBot" && role.Name != "@everyone" && !role.Managed {
-				log.Println("role=", role.Name)
 				err := BotSession.DeleteRole(guild.ID, role.ID)
 				HandleErr(err)
 			}
