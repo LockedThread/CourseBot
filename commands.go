@@ -68,6 +68,8 @@ func CommandSetup(input *CommandInput) {
 		HandleErr(err)
 		err = BotSession.React(channel.ID, message.ID, "✅")
 		HandleErr(err)
+
+		AddGuildCache(guild.ID)
 	}
 }
 
@@ -75,10 +77,14 @@ func CommandGetPermissions(input *CommandInput) {
 	if input.Event.Author.ID.String() == "697631712485572648" {
 		channel, err := BotSession.Channel(input.Event.ChannelID)
 		HandleErr(err)
-		log.Println("channel.Permissions=", channel.Permissions)
-		for i := range channel.Permissions {
-			overwrite := channel.Permissions[i]
-			log.Printf("%s %v %v %v", overwrite.ID.String(), overwrite.Allow, overwrite.Deny, overwrite.Type)
+		for _, permission := range channel.Permissions {
+			log.Printf(
+				"Permission | %s | %v | %v | %v",
+				permission.ID.String(),
+				permission.Allow,
+				permission.Deny,
+				permission.Type,
+			)
 		}
 	}
 }
@@ -87,9 +93,9 @@ func CommandGetRolePermissions(input *CommandInput) {
 	if input.Event.Author.ID.String() == "697631712485572648" {
 		roles, err := BotSession.Roles(input.Event.GuildID)
 		HandleErr(err)
-		for i := range roles {
-			if roles[i].ID.String() == input.Arguments[0] {
-				permissions := roles[i].Permissions
+		for _, role := range roles {
+			if role.ID.String() == input.Arguments[0] {
+				permissions := role.Permissions
 				log.Println("permissions=", permissions)
 				break
 			}
@@ -101,12 +107,16 @@ func CommandGetChannelPermissions(input *CommandInput) {
 	if input.Event.Author.ID.String() == "697631712485572648" {
 		channels, err := BotSession.Channels(input.Event.GuildID)
 		HandleErr(err)
-		for i := range channels {
-			if channels[i].ID.String() == input.Arguments[0] {
-				permissions := channels[i].Permissions
-				for i2 := range permissions {
-					overwrite := permissions[i2]
-					log.Printf("%s %v %v %v", overwrite.ID.String(), overwrite.Allow, overwrite.Deny, overwrite.Type)
+		for _, channel := range channels {
+			if channel.ID.String() == input.Arguments[0] {
+				for _, permission := range channel.Permissions {
+					log.Printf(
+						"Permission %s | %v | %v | %v",
+						permission.ID.String(),
+						permission.Allow,
+						permission.Deny,
+						permission.Type,
+					)
 				}
 				break
 			}
