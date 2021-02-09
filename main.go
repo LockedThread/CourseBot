@@ -11,7 +11,7 @@ import (
 
 var (
 	BotSession    session.Session
-	GuildCacheMap map[discord.GuildID]GuildCache
+	GuildCacheMap = make(map[discord.GuildID]GuildCache)
 )
 
 func main() {
@@ -25,7 +25,6 @@ func main() {
 		BotSession = *s
 	}
 
-	LoadGuildCache()
 	SetupHandlers()
 
 	// Add the needed Gateway intents.
@@ -39,6 +38,7 @@ func main() {
 	defer BotSession.Close()
 
 	log.Println("CourseBot started without issues")
+	LoadGuildCache()
 	// Block forever.
 	select {}
 }
@@ -90,6 +90,9 @@ func SetupHandlers() {
 	})
 
 	BotSession.AddHandler(func(event *gateway.MessageReactionAddEvent) {
+		if event.Member.User.Bot {
+			return
+		}
 		channel, err := BotSession.Channel(event.ChannelID)
 		HandleErr(err)
 		if channel.Name == "welcome" {
@@ -140,6 +143,6 @@ func AddGuildCache(guildId discord.GuildID) {
 
 func HandleErr(err error) {
 	if err != nil {
-		log.Fatalln("We've encountered an error:", err)
+		log.Panicln("We've encountered an error:", err)
 	}
 }
